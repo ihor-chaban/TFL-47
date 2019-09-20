@@ -17,7 +17,6 @@
 
     - name: Generate certificate
       shell: certbot certonly --register-unsafely-without-email --standalone -d {{ domain }} -n --agree-tos
-      ignore_errors: yes
 
     - name: Add certificate autorenewal
       cron:
