@@ -1,0 +1,36 @@
+nginx:
+    image: nginx:latest
+    ports:
+    - '80:80'
+    - '443:443'
+    volumes:
+        - ./nginx:/etc/nginx/conf.d
+        - ./logs/nginx:/var/log/nginx
+        - ./php:/var/www/html
+        - /etc/letsencrypt/live/chaban.opsworks.org:/etc/letsencrypt/live/{{ domain }}
+        - /etc/letsencrypt/archive/chaban.opsworks.org:/etc/letsencrypt/archive/{{ domain }}
+    links:
+        - php
+    command: "/bin/sh -c 'while :; do sleep 6h & wait $${!}; nginx -s reload; done & nginx -g \"daemon off;\"'"
+    restart: always
+
+mysql:
+    image: mariadb
+    ports:
+        - '3306:3306'
+    volumes:
+        - ./db-data:/var/lib/mysql
+    environment:
+        - MYSQL_ROOT_PASSWORD=aBXA3WJntT"RsHve
+    restart: always
+
+php:
+    image: bitnami/php-fpm
+    ports:
+        - '9000:9000'
+    volumes:
+        - ./php:/var/www/html
+    links:
+        - mysql
+    restart: always
+    

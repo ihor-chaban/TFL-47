@@ -1,0 +1,49 @@
+---
+- hosts: servers
+  become: true
+  vars:
+    domain: chaban.opsworks.org
+    projectpath: /home/ubuntu/wordpress-compose
+  tasks:
+    - name: Add repository for certbot
+      apt_repository:
+        repo: "ppa:certbot/certbot"
+        state: present
+
+    - name: Install packages
+      apt:
+        name: ['docker.io', 'docker-compose', 'certbot']
+        state: latest
+
+    - name: Generate certificate
+      shell: certbot certonly --register-unsafely-without-email --standalone -d {{ domain }} -n --agree-tos
+      ignore_errors: yes
+
+    - name: Add certificate autorenewal
+      cron:
+        day: "*/1"
+        job: "certbot certonly --register-unsafely-without-email --standalone -d {{ domain }} -n --agree-tos"
+    
+    - name: Create docker project directory
+      file:
+        path: "{{ projectpath }}"
+        state: directory
+
+    - name: Create docker-compose.yml
+      template:
+        src: ./docker-compose.yml.j2
+        dest: "{{ projectpath }}/docker-compose.yml"
+
+    - name: Create nginx directory
+      file:
+        path: "{{ projectpath }}/nginx/"
+        state: directory
+
+    - name: Create nginx.conf
+      template:
+        src: ./nginx.conf.j2
+        dest: "{{ projectpath }}/nginx/nginx.conf"
+
+    - name: Docker compose
+      docker_compose:
+        project_src: "{{ projectpath }}"
